@@ -1,16 +1,54 @@
-// PRODUITS (élargis avec stock et prix numériques)
-const products = [
-  { id: 1, name: "Scrunchie doux", price: 4, stock: 10, category: "scrunchies", image: "scrunchie.JPG", description: "Doux pour vos cheveux" },
-  { id: 2, name: "Barrettes", price: 6, stock: 5, category: "barrettes", image: "barettes.JPG", description: "Élégance discrète" },
-  { id: 3, name: "Set Satin Premium", price: 25, stock: 0, category: "sets", image: "set satinèè.JPG", description: "3 accessoires assortis" },
-  { id: 4, name: "Scrunchie Soie", price: 5, stock: 8, category: "scrunchies", image: "https://placehold.co/400x400/f9e6e0/black?text=Scrunchie+Soie", description: "100% soie naturelle" },
-  { id: 5, name: "Barrette Papillon", price: 7, stock: 12, category: "barrettes", image: "papillon.JPG", description: "Motif papillon" },
-  { id: 6, name: "Set Nuit Magique", price: 35, stock: 3, category: "sets", image: "pack.JPG", description: "Pour des nuits douces" }
-];
+const catalog = typeof products !== "undefined" ? products : [];
 
 // STORAGE
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
+function formatDT(value) {
+  return `${value}DT`;
+}
+
+function findProduct(productId) {
+  return catalog.find(product => product.id === productId);
+}
+
+function saveCart() {
+  localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+function saveFavorites() {
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+}
+
+function showToast(message = "Produit ajouté au panier") {
+  const toast = document.getElementById("cartToast");
+  if (!toast) return;
+
+  const textNode = toast.querySelector("span");
+  if (textNode) {
+    textNode.textContent = message;
+  }
+
+  toast.classList.add("show");
+  window.clearTimeout(window.cartToastTimeout);
+  window.cartToastTimeout = window.setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2200);
+}
+
+function animateCartIcon() {
+  const cartIcon = document.getElementById("cartIconBtn");
+  if (!cartIcon) return;
+
+  cartIcon.classList.remove("cart-vibrate");
+  void cartIcon.offsetWidth;
+  cartIcon.classList.add("cart-vibrate");
+
+  window.clearTimeout(window.cartIconTimeout);
+  window.cartIconTimeout = window.setTimeout(() => {
+    cartIcon.classList.remove("cart-vibrate");
+  }, 500);
+}
 
 // Mettre à jour le compteur du panier
 function updateCartCount() {
@@ -26,7 +64,7 @@ function displayProducts(productsToShow = null, containerId = "productsContainer
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const productsToDisplay = productsToShow || products;
+  const productsToDisplay = productsToShow || catalog;
 
   if (productsToDisplay.length === 0) {
     container.innerHTML = `<div class="col-12 text-center"><p>Aucun produit trouvé</p></div>`;
@@ -68,7 +106,7 @@ function filterProducts() {
   const filterValue = document.getElementById("filterCategory")?.value;
   const sortValue = document.getElementById("sortPrice")?.value;
   
-  let filtered = [...products];
+  let filtered = [...catalog];
   
   if (filterValue && filterValue !== "all") {
     filtered = filtered.filter(p => p.category === filterValue);
@@ -83,11 +121,69 @@ function filterProducts() {
   displayProducts(filtered);
 }
 
-// AFFICHER LE PANIER (Correctif Bug présence éléments)
+function displayFeaturedProducts() {
+  displayProducts(catalog.slice(0, 4), "featuredProducts");
+}
+
+function addToCart(productId) {
+  const product = findProduct(productId);
+  if (!product) return;
+
+  const existingItem = cart.find(item => item.id === productId);
+
+  if (existingItem) {
+    existingItem.qty = (existingItem.qty || 1) + 1;
+  } else {
+    cart.push({ ...product, qty: 1 });
+  }
+
+  saveCart();
+  updateCartCount();
+  displayCart();
+  showToast(`${product.name} ajouté au panier`);
+  animateCartIcon();
+}
+
+function updateQuantity(productId, nextQuantity) {
+  const itemIndex = cart.findIndex(item => item.id === productId);
+  if (itemIndex === -1) return;
+
+  if (nextQuantity <= 0) {
+    cart.splice(itemIndex, 1);
+  } else {
+    cart[itemIndex].qty = nextQuantity;
+  }
+
+  saveCart();
+  updateCartCount();
+  displayCart();
+}
+
+function removeFromCart(productId) {
+  cart = cart.filter(item => item.id !== productId);
+  saveCart();
+  updateCartCount();
+  displayCart();
+}
+
+function toggleFavorite(productId) {
+  if (favorites.includes(productId)) {
+    favorites = favorites.filter(id => id !== productId);
+  } else {
+    favorites.push(productId);
+  }
+
+  saveFavorites();
+  displayProducts();
+  displayFeaturedProducts();
+}
+
+// AFFICHER LE PANIER
 function displayCart() {
   const container = document.getElementById("cartItems");
   const totalSpan = document.getElementById("cartTotal");
   const subtotalSpan = document.getElementById("cartSubtotal");
+  const shippingSpan = document.getElementById("cartShipping");
   const emptyCartDiv = document.getElementById("emptyCart");
 
   if (!container) return;
@@ -95,45 +191,93 @@ function displayCart() {
   if (cart.length === 0) {
     if (emptyCartDiv) emptyCartDiv.classList.remove("d-none");
     container.innerHTML = "";
-    if (totalSpan) totalSpan.textContent = "0DT";
-    if (subtotalSpan) subtotalSpan.textContent = "0DT";
+    if (totalSpan) totalSpan.textContent = formatDT(0);
+    if (subtotalSpan) subtotalSpan.textContent = formatDT(0);
+    if (shippingSpan) shippingSpan.textContent = formatDT(0);
     return;
   }
 
   if (emptyCartDiv) emptyCartDiv.classList.add("d-none");
 
-  let total = 0;
-  container.innerHTML = cart.map(item => {
+  let subtotal = 0;
+  const rows = cart.map(item => {
     const qty = item.qty || 1;
     const itemTotal = item.price * qty;
-    total += itemTotal;
+    subtotal += itemTotal;
     return `
-      <div class="cart-item">
-        <div>
-          <strong>${item.name}</strong>
-          <p class="small text-muted mb-0">${item.price}DT x ${qty}</p>
-        </div>
-        <div>
-          <span class="fw-bold me-3">${itemTotal}DT</span>
-          <button onclick="updateQuantity(${item.id}, ${qty - 1})" class="btn btn-sm btn-outline-secondary">-</button>
-          <span class="mx-2">${qty}</span>
-          <button onclick="updateQuantity(${item.id}, ${qty + 1})" class="btn btn-sm btn-outline-secondary">+</button>
-          <button onclick="removeFromCart(${item.id})" class="btn btn-sm btn-danger ms-2">
+      <tr>
+        <td>
+          <div class="d-flex align-items-center gap-3">
+            <img src="${item.image}" alt="${item.name}" class="cart-thumb">
+            <div>
+              <div class="fw-semibold">${item.name}</div>
+              <div class="text-muted small">Réf. #${item.id}</div>
+            </div>
+          </div>
+        </td>
+        <td class="text-nowrap">${formatDT(item.price)}</td>
+        <td>
+          <div class="quantity-control">
+            <button type="button" class="btn btn-sm btn-outline-dark" onclick="updateQuantity(${item.id}, ${qty - 1})">-</button>
+            <span class="fw-semibold">${qty}</span>
+            <button type="button" class="btn btn-sm btn-outline-dark" onclick="updateQuantity(${item.id}, ${qty + 1})">+</button>
+          </div>
+        </td>
+        <td class="fw-bold text-nowrap">${formatDT(itemTotal)}</td>
+        <td class="text-end">
+          <button type="button" onclick="removeFromCart(${item.id})" class="btn btn-sm btn-outline-danger">
             <i class="bi bi-trash"></i>
           </button>
-        </div>
-      </div>
+        </td>
+      </tr>
     `;
   }).join("");
 
-  if (totalSpan) totalSpan.textContent = total + "DT";
-  if (subtotalSpan) subtotalSpan.textContent = total + "DT";
+  const shipping = subtotal > 100 ? 0 : 7;
+  const total = subtotal + shipping;
+
+  container.innerHTML = `
+    <div class="table-responsive cart-table-wrap">
+      <table class="table align-middle table-borderless cart-table mb-0">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Prix unitaire</th>
+            <th>Quantité</th>
+            <th>Total ligne</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (subtotalSpan) subtotalSpan.textContent = formatDT(subtotal);
+  if (shippingSpan) shippingSpan.textContent = shipping === 0 ? "Offert" : formatDT(shipping);
+  if (totalSpan) totalSpan.textContent = formatDT(total);
 }
 
-// ... (reste des fonctions addToCart, updateQuantity, showToast identiques)
+function checkout() {
+  if (!cart.length) {
+    showToast("Votre panier est vide");
+    return;
+  }
+
+  showToast("Paiement simulé avec succès");
+}
 
 // INITIALISATION
 document.addEventListener("DOMContentLoaded", () => {
+  const cartButton = document.getElementById("cartIconBtn");
+  if (cartButton) {
+    cartButton.addEventListener("click", () => {
+      window.location.href = "panier.html";
+    });
+  }
+
   if (document.getElementById("productsContainer")) {
     displayProducts();
     document.getElementById("filterCategory")?.addEventListener("change", filterProducts);
