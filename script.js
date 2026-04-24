@@ -74,29 +74,43 @@ function displayProducts(productsToShow = null, containerId = "productsContainer
   const html = productsToDisplay.map(p => {
     const isOutOfStock = p.stock === 0;
     return `
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
-      <div class="card-product">
-        <span onclick="toggleFavorite(${p.id})" 
-          class="heart ${favorites.includes(p.id) ? 'active' : ''}">
-          <i class="bi bi-heart${favorites.includes(p.id) ? '-fill' : ''}"></i>
-        </span>
-        <div class="img-container" style="height: 280px; overflow: hidden;">
-            <img src="${p.image}" alt="${p.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
-        </div>
-        <div class="p-3">
-          <h6 class="fw-bold">${p.name}</h6>
-          <p class="small text-muted">${p.description}</p>
-          <p class="price mb-2">${p.price}DT</p>
-          <button onclick="addToCart(${p.id})" 
-                  class="btn btn-gold w-100" 
-                  ${isOutOfStock ? 'disabled' : ''}>
-            <i class="bi ${isOutOfStock ? 'bi-x-circle' : 'bi-bag-plus'}"></i> 
-            ${isOutOfStock ? 'Rupture de stock' : 'Ajouter'}
-          </button>
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+        <div class="card-product">
+          <span onclick="toggleFavorite(${p.id})" 
+            class="heart ${favorites.includes(p.id) ? 'active' : ''}">
+            <i class="bi bi-heart${favorites.includes(p.id) ? '-fill' : ''}"></i>
+          </span>
+          
+          <a href="product-detail.html?id=${p.id}" class="text-decoration-none">
+            <div class="img-container" style="height: 280px; overflow: hidden;">
+                <img src="${p.image}" alt="${p.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+          </a>
+
+          <div class="p-3">
+            <a href="product-detail.html?id=${p.id}" class="text-decoration-none text-dark">
+              <h6 class="fw-bold mb-1">${p.name}</h6>
+            </a>
+            
+            <p class="small text-muted mb-2">${p.description}</p>
+            <p class="price mb-3">${p.price}DT</p>
+            
+            <div class="d-flex flex-column gap-2">
+              <a href="product-detail.html?id=${p.id}" class="btn btn-outline-dark btn-sm rounded-pill">
+                <i class="bi bi-eye"></i> Voir détails
+              </a>
+              
+              <button onclick="addToCart(${p.id})" 
+                      class="btn btn-gold btn-sm w-100 rounded-pill" 
+                      ${isOutOfStock ? 'disabled' : ''}>
+                <i class="bi ${isOutOfStock ? 'bi-x-circle' : 'bi-bag-plus'}"></i> 
+                ${isOutOfStock ? 'Rupture' : 'Ajouter'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  `}).join("");
+    `}).join("");
 
   container.innerHTML = html;
 }
@@ -290,4 +304,91 @@ document.addEventListener("DOMContentLoaded", () => {
 
   displayCart();
   updateCartCount();
+});
+// 1. Récupérer le produit depuis l'URL
+function loadProductDetails() {
+  const params = new URLSearchParams(window.location.search);
+  const productId = parseInt(params.get('id'));
+  const product = products.find(p => p.id === productId);
+  const container = document.getElementById("productDetailContainer");
+
+  if (!product || !container) return;
+
+  const isOutOfStock = product.stock === 0;
+
+  container.innerHTML = `
+    <div class="col-md-6 animate__animated animate__fadeIn">
+      <div class="rounded overflow-hidden shadow-sm">
+        <img src="${product.image}" class="img-fluid w-100" alt="${product.name}" style="min-height: 500px; object-fit: cover;">
+      </div>
+    </div>
+    <div class="col-md-6">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="products.html" class="text-decoration-none">Boutique</a></li>
+          <li class="breadcrumb-item active text-capitalize">${product.category}</li>
+        </ol>
+      </nav>
+      <h1 class="fw-bold display-5">${product.name}</h1>
+      <p class="fs-3 text-gold fw-bold mb-4">${product.price}DT</p>
+      <hr>
+      <p class="text-muted lead mb-4">${product.longDescription || product.description}</p>
+      
+      <div class="mb-4">
+        <label class="form-label fw-bold">Quantité</label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="number" id="detailQty" value="1" min="1" max="${product.stock}" class="form-control" style="width: 80px;">
+          <span class="small text-muted">${product.stock} pièces disponibles</span>
+        </div>
+      </div>
+
+      <button onclick="addToCartWithQty(${product.id})" class="btn btn-dark btn-lg w-100 py-3 mb-3" ${isOutOfStock ? 'disabled' : ''}>
+        <i class="bi bi-bag-plus me-2"></i> ${isOutOfStock ? 'Rupture de stock' : 'Ajouter au panier'}
+      </button>
+      
+      <div class="d-flex gap-3 text-muted small mt-4">
+        <span><i class="bi bi-truck me-1"></i> Livraison 24/48h</span>
+        <span><i class="bi bi-arrow-repeat me-1"></i> Retours gratuits</span>
+      </div>
+    </div>
+  `;
+
+  displayRelatedProducts(product);
+}
+
+// 2. Ajouter au panier avec quantité spécifique
+function addToCartWithQty(id) {
+  const qtyInput = document.getElementById("detailQty");
+  const qty = parseInt(qtyInput.value) || 1;
+  
+  for(let i = 0; i < qty; i++) {
+    addToCart(id); // Réutilise ta fonction existante
+  }
+}
+
+// 3. Afficher les produits similaires
+function displayRelatedProducts(currentProduct) {
+  const container = document.getElementById("relatedProductsContainer");
+  if (!container) return;
+
+  const related = products
+    .filter(p => p.category === currentProduct.category && p.id !== currentProduct.id)
+    .slice(0, 3);
+
+  displayProducts(related, "relatedProductsContainer");
+}
+
+// 4. Modifier displayProducts pour rendre les cartes cliquables
+// Dans ta fonction displayProducts existante, modifie le lien de l'image et du titre :
+/* Exemple de modification du HTML généré :
+   <a href="product-detail.html?id=${p.id}" class="text-decoration-none text-dark">
+      <h6 class="fw-bold">${p.name}</h6>
+   </a>
+*/
+
+// Initialisation au chargement
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.location.pathname.includes("product-detail")) {
+    loadProductDetails();
+  }
 });
