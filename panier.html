@@ -78,9 +78,66 @@
           <strong id="cartTotal">0DT</strong>
         </div>
 
-        <button onclick="checkout()" class="btn btn-gold w-100 btn-lg">
-          <i class="bi bi-credit-card me-2"></i>Payer maintenant
-        </button>
+        <div id="checkoutSection" class="checkout-section d-none">
+          <hr class="my-4">
+          <p class="text-uppercase text-muted small fw-semibold mb-3">Livraison</p>
+
+          <form id="checkoutForm" novalidate>
+            <div class="mb-3">
+              <label for="fullName" class="form-label fw-semibold">Nom complet</label>
+              <input type="text" id="fullName" class="form-control checkout-input" placeholder="Ex: Amira Ben Ali">
+              <div class="field-error" id="fullNameError"></div>
+            </div>
+
+            <div class="mb-3">
+              <label for="phone" class="form-label fw-semibold">Numéro de téléphone</label>
+              <input type="tel" id="phone" class="form-control checkout-input" maxlength="8" inputmode="numeric" placeholder="8 chiffres">
+              <div class="field-error" id="phoneError"></div>
+            </div>
+
+            <div class="mb-3">
+              <label for="governorate" class="form-label fw-semibold">Gouvernorat</label>
+              <select id="governorate" class="form-select checkout-input">
+                <option value="">Choisir un gouvernorat</option>
+                <option>Ariana</option>
+                <option>Béja</option>
+                <option>Ben Arous</option>
+                <option>Bizerte</option>
+                <option>Gabès</option>
+                <option>Gafsa</option>
+                <option>Jendouba</option>
+                <option>Kairouan</option>
+                <option>Kasserine</option>
+                <option>Kébili</option>
+                <option>Le Kef</option>
+                <option>Mahdia</option>
+                <option>Manouba</option>
+                <option>Médenine</option>
+                <option>Monastir</option>
+                <option>Nabeul</option>
+                <option>Sfax</option>
+                <option>Sidi Bouzid</option>
+                <option>Siliana</option>
+                <option>Sousse</option>
+                <option>Tataouine</option>
+                <option>Tozeur</option>
+                <option>Tunis</option>
+                <option>Zaghouan</option>
+              </select>
+              <div class="field-error" id="governorateError"></div>
+            </div>
+
+            <div class="mb-4">
+              <label for="address" class="form-label fw-semibold">Adresse précise</label>
+              <textarea id="address" class="form-control checkout-input" rows="3" placeholder="Rue, numéro, étage, code postal..."></textarea>
+              <div class="field-error" id="addressError"></div>
+            </div>
+
+            <button type="submit" id="checkoutSubmitBtn" class="btn btn-gold w-100 btn-lg" disabled>
+              <i class="bi bi-shield-check me-2"></i>Valider la commande
+            </button>
+          </form>
+        </div>
       </aside>
     </div>
   </div>

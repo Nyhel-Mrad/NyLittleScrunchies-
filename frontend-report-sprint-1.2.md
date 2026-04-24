@@ -82,3 +82,81 @@ Isolate product data into a separate file and upgrade the cart experience to fee
 ## Notes
 - The project is now in a cleaner structure for future API replacement because the product data is isolated in one file.
 - The cart experience is more aligned with a premium storefront layout.
+
+## Sprint 2.2 Add-on: Checkout Validation & Security
+
+### 1. Checkout form replacement
+- Replaced the simple payment button in [panier.html](panier.html) with a professional checkout form.
+- The form only appears when the cart contains items.
+- Added the following fields:
+  - full name
+  - Tunisian phone number with 8 digits
+  - governorate selector with all 24 Tunisian governorates
+  - precise address
+
+### 2. Real-time validation in JavaScript
+- Extended [script.js](script.js) with live form validation.
+- The submit button stays disabled until all fields are valid.
+- Error messages appear under each field when validation fails.
+- Validation rules currently include:
+  - phone number must contain exactly 8 digits
+  - name must be a plausible full name
+  - governorate must be selected
+  - address must contain enough detail
+
+### 3. Order object generation
+- Updated `checkout()` so it now builds an `orderData` JSON object.
+- The object includes:
+  - customer details
+  - cart items
+  - subtotal
+  - shipping cost
+  - final total
+  - order date
+- For now, the order is logged with `console.log(orderData)` before redirecting.
+
+### 4. Confirmation flow
+- Added [confirmation.html](confirmation.html) as a success page after checkout.
+- The confirmation page reads the saved order from `sessionStorage`.
+- It displays:
+  - success message
+  - customer summary
+  - order totals
+  - purchased items
+
+### 5. Styling updates for checkout
+- Extended [style.css](style.css) with checkout form and confirmation page styles.
+- Added:
+  - input styling
+  - inline error states
+  - confirmation card layout
+  - order summary blocks
+  - responsive adjustments for the recap grid
+
+## Current Frontend State
+
+### Working now
+- Product data is isolated in [data.js](data.js) and includes `longDescription` for every product.
+- The homepage and products page still load catalog data correctly.
+- The cart page renders a Bootstrap table with summary totals and shipping logic.
+- The checkout form is shown only when the cart is not empty.
+- Real-time validation prevents submission until the customer details are valid.
+- Submitting checkout creates an `orderData` object, logs it, stores it in `sessionStorage`, and redirects to [confirmation.html](confirmation.html).
+- The confirmation page displays a success message and order recap.
+- Favorites and cart state continue to persist in `localStorage`.
+
+### Present UI structure
+- [index.html](index.html): premium landing page with hero, featured products, and about section.
+- [products.html](products.html): filtered product grid with details links and cart access.
+- [panier.html](panier.html): cart table on the left and checkout summary/form on the right.
+- [confirmation.html](confirmation.html): clean order success screen with recap.
+
+## Validation
+- Syntax checks returned no errors for:
+  - [script.js](script.js)
+  - [data.js](data.js)
+  - [index.html](index.html)
+  - [products.html](products.html)
+  - [panier.html](panier.html)
+  - [confirmation.html](confirmation.html)
+  - [style.css](style.css)

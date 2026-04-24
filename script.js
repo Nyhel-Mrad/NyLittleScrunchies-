@@ -199,11 +199,13 @@ function displayCart() {
   const subtotalSpan = document.getElementById("cartSubtotal");
   const shippingSpan = document.getElementById("cartShipping");
   const emptyCartDiv = document.getElementById("emptyCart");
+  const checkoutSection = document.getElementById("checkoutSection");
 
   if (!container) return;
 
   if (cart.length === 0) {
     if (emptyCartDiv) emptyCartDiv.classList.remove("d-none");
+    if (checkoutSection) checkoutSection.classList.add("d-none");
     container.innerHTML = "";
     if (totalSpan) totalSpan.textContent = formatDT(0);
     if (subtotalSpan) subtotalSpan.textContent = formatDT(0);
@@ -212,6 +214,7 @@ function displayCart() {
   }
 
   if (emptyCartDiv) emptyCartDiv.classList.add("d-none");
+  if (checkoutSection) checkoutSection.classList.remove("d-none");
 
   let subtotal = 0;
   const rows = cart.map(item => {
@@ -272,15 +275,114 @@ function displayCart() {
   if (subtotalSpan) subtotalSpan.textContent = formatDT(subtotal);
   if (shippingSpan) shippingSpan.textContent = shipping === 0 ? "Offert" : formatDT(shipping);
   if (totalSpan) totalSpan.textContent = formatDT(total);
+
+  updateCheckoutState();
 }
 
-function checkout() {
-  if (!cart.length) {
-    showToast("Votre panier est vide");
+function getCheckoutFields() {
+  return {
+    fullName: document.getElementById("fullName"),
+    phone: document.getElementById("phone"),
+    governorate: document.getElementById("governorate"),
+    address: document.getElementById("address"),
+    submitButton: document.getElementById("checkoutSubmitBtn")
+  };
+}
+
+function setFieldError(fieldId, message) {
+  const errorElement = document.getElementById(`${fieldId}Error`);
+  if (errorElement) {
+    errorElement.textContent = message || "";
+  }
+
+  const field = document.getElementById(fieldId);
+  if (field) {
+    field.classList.toggle("is-invalid", Boolean(message));
+  }
+}
+
+function validateCheckoutForm(showErrors = true) {
+  const fields = getCheckoutFields();
+  if (!fields.fullName || !fields.phone || !fields.governorate || !fields.address || !fields.submitButton) {
+    return false;
+  }
+
+  const fullNameValue = fields.fullName.value.trim();
+  const phoneValue = fields.phone.value.trim();
+  const governorateValue = fields.governorate.value.trim();
+  const addressValue = fields.address.value.trim();
+
+  const fullNameValid = /^[A-Za-zÀ-ÿ'\-\s]{3,}$/.test(fullNameValue) && fullNameValue.includes(" ");
+  const phoneValid = /^\d{8}$/.test(phoneValue);
+  const governorateValid = governorateValue.length > 0;
+  const addressValid = addressValue.length >= 10;
+
+  if (showErrors) {
+    setFieldError("fullName", fullNameValid ? "" : "Nom complet invalide");
+    setFieldError("phone", phoneValid ? "" : "Numéro invalide");
+    setFieldError("governorate", governorateValid ? "" : "Veuillez choisir un gouvernorat");
+    setFieldError("address", addressValid ? "" : "Adresse incomplète");
+  }
+
+  const isFormValid = fullNameValid && phoneValid && governorateValid && addressValid;
+  fields.submitButton.disabled = !isFormValid || cart.length === 0;
+  return isFormValid;
+}
+
+function updateCheckoutState() {
+  const checkoutSection = document.getElementById("checkoutSection");
+  if (!checkoutSection) return;
+
+  if (cart.length === 0) {
+    checkoutSection.classList.add("d-none");
     return;
   }
 
-  showToast("Paiement simulé avec succès");
+  checkoutSection.classList.remove("d-none");
+  validateCheckoutForm(false);
+}
+
+function buildOrderData() {
+  const fields = getCheckoutFields();
+  const subtotal = cart.reduce((sum, item) => sum + item.price * (item.qty || 1), 0);
+  const shipping = subtotal > 100 ? 0 : 7;
+  const total = subtotal + shipping;
+
+  return {
+    customer: {
+      fullName: fields.fullName.value.trim(),
+      phone: fields.phone.value.trim(),
+      governorate: fields.governorate.value.trim(),
+      address: fields.address.value.trim()
+    },
+    items: cart.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      qty: item.qty || 1,
+      image: item.image,
+      lineTotal: item.price * (item.qty || 1)
+    })),
+    totalFinal: total,
+    subtotal,
+    shipping,
+    date: new Date().toISOString()
+  };
+}
+
+function checkout(event) {
+  if (event) {
+    event.preventDefault();
+  }
+
+  if (!validateCheckoutForm(true)) {
+    return;
+  }
+
+  const orderData = buildOrderData();
+  console.log(orderData);
+  sessionStorage.setItem("lastOrder", JSON.stringify(orderData));
+  window.location.href = "confirmation.html";
 }
 
 // INITIALISATION
@@ -304,6 +406,82 @@ document.addEventListener("DOMContentLoaded", () => {
 
   displayCart();
   updateCartCount();
+
+  const checkoutForm = document.getElementById("checkoutForm");
+  if (checkoutForm) {
+    checkoutForm.addEventListener("submit", checkout);
+
+    const fields = getCheckoutFields();
+    [fields.fullName, fields.phone, fields.governorate, fields.address].forEach(field => {
+      if (!field) return;
+      const eventName = field.tagName === "SELECT" ? "change" : "input";
+      field.addEventListener(eventName, () => validateCheckoutForm(true));
+      field.addEventListener("blur", () => validateCheckoutForm(true));
+    });
+
+    validateCheckoutForm(false);
+  }
+
+  const confirmationContent = document.getElementById("confirmationContent");
+  if (confirmationContent) {
+    const storedOrder = sessionStorage.getItem("lastOrder");
+    if (!storedOrder) {
+      confirmationContent.innerHTML = `
+        <div class="alert alert-warning rounded-4">
+          Aucune commande récente n’a été trouvée.
+        </div>
+        <a href="panier.html" class="btn btn-gold rounded-pill">Retourner au panier</a>
+      `;
+      return;
+    }
+
+    const order = JSON.parse(storedOrder);
+    const formattedDate = new Date(order.date).toLocaleString("fr-FR", {
+      dateStyle: "full",
+      timeStyle: "short"
+    });
+
+    confirmationContent.innerHTML = `
+      <div class="order-summary-grid">
+        <div class="order-summary-block">
+          <p class="text-muted small mb-1">Client</p>
+          <strong>${order.customer.fullName}</strong><br>
+          <span class="text-muted">${order.customer.phone}</span><br>
+          <span class="text-muted">${order.customer.governorate}</span><br>
+          <span class="text-muted">${order.customer.address}</span>
+        </div>
+
+        <div class="order-summary-block">
+          <p class="text-muted small mb-1">Commande</p>
+          <strong>${order.items.length} article(s)</strong><br>
+          <span class="text-muted">Sous-total : ${formatDT(order.subtotal)}</span><br>
+          <span class="text-muted">Livraison : ${order.shipping === 0 ? "Offert" : formatDT(order.shipping)}</span><br>
+          <span class="text-muted fw-semibold">Total : ${formatDT(order.totalFinal)}</span>
+        </div>
+
+        <div class="order-summary-block">
+          <p class="text-muted small mb-1">Date</p>
+          <strong>${formattedDate}</strong>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <h5 class="mb-3">Articles commandés</h5>
+        <div class="confirmation-items">
+          ${order.items.map(item => `
+            <div class="confirmation-item">
+              <img src="${item.image}" alt="${item.name}">
+              <div class="flex-grow-1">
+                <div class="fw-semibold">${item.name}</div>
+                <div class="text-muted small">Quantité : ${item.qty}</div>
+              </div>
+              <div class="fw-bold">${formatDT(item.lineTotal)}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
 });
 // 1. Récupérer le produit depuis l'URL
 function loadProductDetails() {
