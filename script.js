@@ -96,12 +96,12 @@ function displayProducts(productsToShow = null, containerId = "productsContainer
             <p class="price mb-3">${p.price}DT</p>
             
             <div class="d-flex flex-column gap-2">
-              <a href="product-detail.html?id=${p.id}" class="btn btn-outline-dark btn-sm rounded-pill">
+                          <a href="product-detail.html?id=${p.id}" class="btn btn-outline-dark btn-sm rounded-0">
                 <i class="bi bi-eye"></i> Voir détails
               </a>
               
               <button onclick="addToCart(${p.id})" 
-                      class="btn btn-gold btn-sm w-100 rounded-pill" 
+                                  class="btn btn-gold btn-sm w-100 rounded-0" 
                       ${isOutOfStock ? 'disabled' : ''}>
                 <i class="bi ${isOutOfStock ? 'bi-x-circle' : 'bi-bag-plus'}"></i> 
                 ${isOutOfStock ? 'Rupture' : 'Ajouter'}
