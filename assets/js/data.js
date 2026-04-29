@@ -6,7 +6,7 @@ const products = [
     price: 4,
     stock: 10,
     category: "scrunchies",
-    image: "scrunchie.JPG",
+    image: "assets/images/scrunchie.JPG",
     description: "Doux pour vos cheveux",
     longDescription: "Fabriqué à la main avec des tissus sélectionnés pour leur douceur extrême, ce scrunchie évite de casser la fibre capillaire tout en assurant un maintien parfait tout au long de la journée."
   },
@@ -16,7 +16,7 @@ const products = [
     price: 6,
     stock: 5,
     category: "barrettes",
-    image: "barettes.JPG",
+    image: "assets/images/barettes.JPG",
     description: "Élégance discrète",
     longDescription: "Ces barrettes apportent une touche raffinée à toutes les coiffures, avec une finition soignée pensée pour tenir confortablement sans tirer ni glisser. Elles sont idéales pour un look minimaliste et chic au quotidien."
   },
@@ -26,7 +26,7 @@ const products = [
     price: 25,
     stock: 0,
     category: "sets",
-    image: "set satinèè.JPG",
+    image: "assets/images/set satinèè.JPG",
     description: "3 accessoires assortis",
     longDescription: "Ce set premium réunit trois accessoires en satin pensés pour combiner élégance et protection capillaire. Le tissu satiné réduit les frottements, aide à préserver la brillance naturelle des cheveux et offre une finition luxueuse à votre routine."
   },
@@ -46,7 +46,7 @@ const products = [
     price: 7,
     stock: 12,
     category: "barrettes",
-    image: "papillon.JPG",
+    image: "assets/images/papillon.JPG",
     description: "Motif papillon",
     longDescription: "Avec son motif papillon délicat, cette barrette donne immédiatement une allure romantique et lumineuse à la coiffure. Sa structure légère la rend agréable à porter, tandis que son design apporte un vrai détail mode sans surcharger le look."
   },
@@ -56,7 +56,7 @@ const products = [
     price: 35,
     stock: 3,
     category: "sets",
-    image: "pack.JPG",
+    image: "assets/images/pack.JPG",
     description: "Pour des nuits douces",
     longDescription: "Pensé pour accompagner vos routines du soir, ce set réunit des accessoires doux et confortables qui protègent les cheveux pendant la nuit. C’est une sélection idéale pour celles qui veulent allier praticité, confort et une esthétique élégante jusque dans les petits détails."
   }
